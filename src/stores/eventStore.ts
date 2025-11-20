@@ -127,7 +127,7 @@ export const useEventStore = defineStore('events', () => {
       .filter((r) => r.eventId === eventId && (r.status === 'approved' || r.status === 'pending'))
       .reduce((sum, r) => sum + r.count, 0)
 
-    const status = currentParticipants + count > event.maxParticipants ? 'waitlist' : 'pending'
+    const status = currentParticipants + count > event.maxParticipants ? 'waitlist' : 'approved'
 
     const newRegistration: Registration = {
       id: `r${Date.now()}`,

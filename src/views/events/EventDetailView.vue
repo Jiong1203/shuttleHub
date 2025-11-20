@@ -16,6 +16,12 @@ const registrations = computed(() => store.getRegistrationsByEventId(eventId))
 const myRegistration = computed(() => registrations.value.find(r => r.userId === store.currentUser.id))
 const isRegistered = computed(() => !!myRegistration.value)
 
+const approvedRegistrations = computed(() => {
+  return registrations.value
+    .filter(r => r.status === 'approved' || r.status === 'pending')
+    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+})
+
 // Form state
 const showForm = ref(false)
 const form = ref({
@@ -106,6 +112,17 @@ function handleCancel() {
           <div class="description">
             <h3>活動詳情</h3>
             <p>{{ event.description }}</p>
+          </div>
+
+          <div v-if="approvedRegistrations.length > 0" class="participants-section">
+            <h3>已報名名單 ({{ approvedRegistrations.length }})</h3>
+            <div class="participant-list">
+              <div v-for="(reg, index) in approvedRegistrations" :key="reg.id" class="participant-item">
+                <span class="participant-number">{{ index + 1 }}.</span>
+                <span class="participant-name">{{ reg.name }}</span>
+                <span class="participant-count">({{ reg.count }}人)</span>
+              </div>
+            </div>
           </div>
         </AppCard>
       </div>
@@ -322,4 +339,46 @@ h1 {
   text-align: center;
   padding-top: var(--spacing-xl);
 }
+
+.participants-section {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+}
+
+.participants-section h3 {
+  margin-bottom: var(--spacing-md);
+}
+
+.participant-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.participant-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background-color: var(--color-bg-body);
+  border-radius: var(--radius-md);
+}
+
+.participant-number {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  min-width: 30px;
+}
+
+.participant-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.participant-count {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
 </style>
