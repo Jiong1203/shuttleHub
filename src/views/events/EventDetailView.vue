@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useEventStore } from '@/stores/eventStore'
 import AppButton from '@/components/AppButton.vue'
 import AppCard from '@/components/AppCard.vue'
+import AppInput from '@/components/AppInput.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,10 +13,64 @@ const store = useEventStore()
 const eventId = route.params.id as string
 const event = computed(() => store.getEventById(eventId))
 const registrations = computed(() => store.getRegistrationsByEventId(eventId))
-const isRegistered = computed(() => registrations.value.some(r => r.userId === store.currentUser.id))
+const myRegistration = computed(() => registrations.value.find(r => r.userId === store.currentUser.id))
+const isRegistered = computed(() => !!myRegistration.value)
+
+// Form state
+const showForm = ref(false)
+const form = ref({
+  name: store.currentUser.name,
+  count: 1
+})
+
+// Watch for registration changes to update form defaults if editing
+watch(myRegistration, (newReg) => {
+  if (newReg) {
+    form.value.name = newReg.name
+    form.value.count = newReg.count
+  }
+}, { immediate: true })
+
+const duration = computed(() => {
+  const ev = event.value
+  if (!ev || !ev.startTime || !ev.endTime) return 0
+  const start = parseInt(ev.startTime.split(':')[0] || '0')
+  const end = parseInt(ev.endTime.split(':')[0] || '0')
+  return end - start
+})
+
+const currentParticipants = computed(() => {
+  return registrations.value
+    .filter(r => r.status === 'approved' || r.status === 'pending')
+    .reduce((sum, r) => sum + r.count, 0)
+})
+
+const isFull = computed(() => {
+  if (!event.value) return false
+  return currentParticipants.value >= event.value.maxParticipants
+})
 
 function handleRegister() {
-  store.registerForEvent(eventId)
+  if (!event.value) return
+  store.registerForEvent(eventId, form.value.name, form.value.count)
+  showForm.value = false
+}
+
+function handleUpdate() {
+  if (!myRegistration.value) return
+  store.updateRegistration(myRegistration.value.id, {
+    name: form.value.name,
+    count: form.value.count
+  })
+  showForm.value = false
+}
+
+function handleCancel() {
+  if (!myRegistration.value) return
+  if (confirm('確定要取消報名嗎？')) {
+    store.cancelRegistration(myRegistration.value.id)
+    showForm.value = false
+  }
 }
 </script>
 
@@ -28,7 +83,7 @@ function handleRegister() {
             <span class="badge">{{ event.level }}</span>
             <h1>{{ event.title }}</h1>
           </div>
-          
+
           <div class="meta-grid">
             <div class="meta-item">
               <span class="label">日期</span>
@@ -36,7 +91,7 @@ function handleRegister() {
             </div>
             <div class="meta-item">
               <span class="label">時間</span>
-              <span class="value">{{ event.time }}</span>
+              <span class="value">{{ event.startTime }} - {{ event.endTime }} ({{ duration }}小時)</span>
             </div>
             <div class="meta-item">
               <span class="label">地點</span>
@@ -44,7 +99,7 @@ function handleRegister() {
             </div>
             <div class="meta-item">
               <span class="label">費用</span>
-              <span class="value">${{ event.price }} / 人</span>
+              <span class="value">${{ event.price }} / {{ duration }}小時</span>
             </div>
           </div>
 
@@ -60,24 +115,57 @@ function handleRegister() {
           <h3>報名狀態</h3>
           <div class="status-info">
             <div class="progress">
-              <span class="count">{{ registrations.length }}</span>
+              <span class="count">{{ currentParticipants }}</span>
               <span class="total">/ {{ event.maxParticipants }}</span>
             </div>
-            <p class="status-text">已報名人數</p>
+            <p class="status-text">目前人數</p>
           </div>
 
-          <AppButton 
-            v-if="!isRegistered" 
-            variant="primary" 
-            class="full-width"
-            @click="handleRegister"
-            :disabled="registrations.length >= event.maxParticipants"
-          >
-            {{ registrations.length >= event.maxParticipants ? '已額滿' : '立即報名' }}
-          </AppButton>
-          <AppButton v-else variant="outline" class="full-width" disabled>
-            已報名
-          </AppButton>
+          <!-- Not Registered -->
+          <div v-if="!isRegistered">
+            <div v-if="!showForm">
+              <AppButton
+                variant="primary"
+                class="full-width"
+                @click="showForm = true"
+              >
+                {{ isFull ? '加入候補' : '立即報名' }}
+              </AppButton>
+            </div>
+            <form v-else @submit.prevent="handleRegister" class="reg-form">
+              <AppInput v-model="form.name" label="報名名稱" required />
+              <AppInput v-model="form.count" type="number" label="報名人數" min="1" required />
+              <div class="form-actions">
+                <AppButton variant="text" size="sm" @click="showForm = false">取消</AppButton>
+                <AppButton type="submit" variant="primary" size="sm">確認</AppButton>
+              </div>
+            </form>
+          </div>
+
+          <!-- Registered -->
+          <div v-else class="registered-info">
+            <div class="status-badge" :class="myRegistration?.status">
+              {{ myRegistration?.status === 'waitlist' ? '候補中' : '已報名' }}
+            </div>
+            <div class="reg-details">
+              <p><strong>名稱：</strong>{{ myRegistration?.name }}</p>
+              <p><strong>人數：</strong>{{ myRegistration?.count }} 位</p>
+            </div>
+
+            <div v-if="!showForm" class="reg-actions">
+              <AppButton variant="outline" size="sm" class="full-width" @click="showForm = true">修改報名</AppButton>
+              <AppButton variant="danger" size="sm" class="full-width" @click="handleCancel">取消報名</AppButton>
+            </div>
+            <form v-else @submit.prevent="handleUpdate" class="reg-form">
+              <AppInput v-model="form.name" label="報名名稱" required />
+              <AppInput v-model="form.count" type="number" label="報名人數" min="1" required />
+              <div class="form-actions">
+                <AppButton variant="text" size="sm" @click="showForm = false">取消</AppButton>
+                <AppButton type="submit" variant="primary" size="sm">儲存</AppButton>
+              </div>
+            </form>
+          </div>
+
         </AppCard>
       </div>
     </div>
@@ -173,6 +261,61 @@ h1 {
 
 .full-width {
   width: 100%;
+}
+
+.reg-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-sm);
+}
+
+.registered-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.status-badge {
+  text-align: center;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+
+.status-badge.approved {
+  background-color: var(--color-success);
+  color: white;
+}
+
+.status-badge.waitlist {
+  background-color: var(--color-warning);
+  color: black;
+}
+
+.reg-details {
+  background-color: var(--color-bg-body);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+}
+
+.reg-details p {
+  margin-bottom: 4px;
+}
+
+.reg-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }
 
 .not-found {

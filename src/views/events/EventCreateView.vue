@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEventStore } from '@/stores/eventStore'
+import { venues } from '@/data/venues'
 import AppButton from '@/components/AppButton.vue'
 import AppInput from '@/components/AppInput.vue'
 import AppCard from '@/components/AppCard.vue'
@@ -12,7 +13,8 @@ const store = useEventStore()
 const form = ref({
   title: '',
   date: '',
-  time: '',
+  startTime: '',
+  endTime: '',
   location: '',
   description: '',
   maxParticipants: 4,
@@ -22,14 +24,14 @@ const form = ref({
 
 function handleSubmit() {
   // Basic validation
-  if (!form.value.title || !form.value.date || !form.value.location) return
+  if (!form.value.title || !form.value.date || !form.value.location || !form.value.startTime || !form.value.endTime) return
 
   store.createEvent({
     ...form.value,
     maxParticipants: Number(form.value.maxParticipants),
     price: Number(form.value.price)
   })
-  
+
   router.push('/events')
 }
 </script>
@@ -41,14 +43,25 @@ function handleSubmit() {
       <AppCard>
         <form @submit.prevent="handleSubmit" class="event-form">
           <AppInput v-model="form.title" label="活動標題" placeholder="例如：週五歡樂羽球" required />
-          
+
           <div class="row">
             <AppInput v-model="form.date" type="date" label="日期" required />
-            <AppInput v-model="form.time" type="time" label="時間" required />
+            <div class="time-range">
+              <AppInput v-model="form.startTime" type="time" label="開始時間" required />
+              <AppInput v-model="form.endTime" type="time" label="結束時間" required />
+            </div>
           </div>
 
-          <AppInput v-model="form.location" label="地點" placeholder="例如：大安運動中心" required />
-          
+          <div class="form-group">
+            <label>地點 <span class="required">*</span></label>
+            <select v-model="form.location" class="select-input" required>
+              <option value="" disabled>請選擇球館</option>
+              <option v-for="venue in venues" :key="venue.name" :value="venue.name">
+                {{ venue.name }} ({{ venue.address }})
+              </option>
+            </select>
+          </div>
+
           <div class="row">
             <div class="form-group">
               <label>程度要求</label>
@@ -63,7 +76,7 @@ function handleSubmit() {
           </div>
 
           <AppInput v-model="form.price" type="number" label="費用 (每人)" required />
-          
+
           <div class="form-group">
             <label>活動描述</label>
             <textarea v-model="form.description" rows="4" class="textarea-input" placeholder="補充說明..."></textarea>
@@ -102,6 +115,12 @@ h1 {
   gap: var(--spacing-md);
 }
 
+.time-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -115,6 +134,10 @@ h1 {
   color: var(--color-text-main);
 }
 
+.required {
+  color: var(--color-danger);
+}
+
 .select-input,
 .textarea-input {
   padding: 0.5rem 0.75rem;
@@ -123,6 +146,7 @@ h1 {
   background-color: var(--color-bg-surface);
   color: var(--color-text-main);
   font-family: inherit;
+  width: 100%;
 }
 
 .select-input:focus,

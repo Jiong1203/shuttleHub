@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useEventStore } from '@/stores/eventStore'
+import { useEventStore, type Event } from '@/stores/eventStore'
 import AppCard from '@/components/AppCard.vue'
 import AppButton from '@/components/AppButton.vue'
 import { useRouter } from 'vue-router'
@@ -12,6 +12,13 @@ const events = computed(() => store.events)
 
 function goToDetail(id: string) {
   router.push(`/events/${id}`)
+}
+
+function getDuration(event: Event) {
+  if (!event.startTime || !event.endTime) return 0
+  const start = parseInt(event.startTime.split(':')[0] || '0')
+  const end = parseInt(event.endTime.split(':')[0] || '0')
+  return end - start
 }
 </script>
 
@@ -27,12 +34,12 @@ function goToDetail(id: string) {
         <div class="event-content">
           <div class="event-header">
             <span class="badge">{{ event.level }}</span>
-            <span class="price">${{ event.price }}</span>
+            <span class="price">${{ event.price }} / {{ getDuration(event) }}hr</span>
           </div>
           <h3>{{ event.title }}</h3>
           <div class="info-row">
             <span>📅 {{ event.date }}</span>
-            <span>⏰ {{ event.time }}</span>
+            <span>⏰ {{ event.startTime }} - {{ event.endTime }}</span>
           </div>
           <div class="info-row">
             <span>📍 {{ event.location }}</span>

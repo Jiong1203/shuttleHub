@@ -14,16 +14,7 @@ const event = computed(() => store.getEventById(eventId))
 const registrations = computed(() => store.getRegistrationsByEventId(eventId))
 
 function updateStatus(registrationId: string, status: 'approved' | 'rejected') {
-  const reg = store.registrations.find(r => r.id === registrationId)
-  if (reg) {
-    reg.status = status
-  }
-}
-
-// Mock user name lookup (since we don't have a real user store yet)
-function getUserName(userId: string) {
-  if (userId === store.currentUser.id) return store.currentUser.name
-  return `User ${userId}`
+  store.updateRegistration(registrationId, { status })
 }
 </script>
 
@@ -39,11 +30,13 @@ function getUserName(userId: string) {
     <div class="stats-cards">
       <AppCard class="stat-card">
         <div class="stat-value">{{ registrations.length }}</div>
-        <div class="stat-label">總報名</div>
+        <div class="stat-label">總報名單</div>
       </AppCard>
       <AppCard class="stat-card">
-        <div class="stat-value">{{ registrations.filter(r => r.status === 'approved').length }}</div>
-        <div class="stat-label">已核准</div>
+        <div class="stat-value">
+          {{ registrations.reduce((sum, r) => r.status === 'approved' ? sum + r.count : sum, 0) }}
+        </div>
+        <div class="stat-label">已核准人數</div>
       </AppCard>
       <AppCard class="stat-card">
         <div class="stat-value">{{ event.maxParticipants }}</div>
@@ -58,19 +51,22 @@ function getUserName(userId: string) {
 
       <AppCard v-else v-for="reg in registrations" :key="reg.id" class="registration-item">
         <div class="user-info">
-          <div class="avatar-placeholder">{{ getUserName(reg.userId)[0] }}</div>
+          <div class="avatar-placeholder">{{ reg.name[0] }}</div>
           <div>
-            <div class="user-name">{{ getUserName(reg.userId) }}</div>
+            <div class="user-name">
+              {{ reg.name }}
+              <span class="count-badge">x{{ reg.count }}</span>
+            </div>
             <div class="reg-time">{{ new Date(reg.timestamp).toLocaleString() }}</div>
           </div>
         </div>
 
         <div class="status-actions">
           <span :class="['status-badge', reg.status]">
-            {{ reg.status === 'approved' ? '已核准' : reg.status === 'rejected' ? '已拒絕' : '待審核' }}
+            {{ reg.status === 'approved' ? '已核准' : reg.status === 'rejected' ? '已拒絕' : reg.status === 'waitlist' ? '候補中' : '待審核' }}
           </span>
-          
-          <div class="action-buttons" v-if="reg.status === 'pending'">
+
+          <div class="action-buttons" v-if="reg.status === 'pending' || reg.status === 'waitlist'">
             <AppButton size="sm" variant="primary" @click="updateStatus(reg.id, 'approved')">核准</AppButton>
             <AppButton size="sm" variant="danger" @click="updateStatus(reg.id, 'rejected')">拒絕</AppButton>
           </div>
@@ -146,6 +142,18 @@ function getUserName(userId: string) {
 
 .user-name {
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.count-badge {
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0 6px;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
 }
 
 .reg-time {
@@ -167,6 +175,11 @@ function getUserName(userId: string) {
 
 .status-badge.pending {
   background-color: var(--color-warning);
+  color: black;
+}
+
+.status-badge.waitlist {
+  background-color: var(--color-text-muted);
   color: white;
 }
 
@@ -196,7 +209,7 @@ function getUserName(userId: string) {
     align-items: flex-start;
     gap: var(--spacing-md);
   }
-  
+
   .status-actions {
     width: 100%;
     justify-content: space-between;
