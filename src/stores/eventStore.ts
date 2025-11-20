@@ -107,13 +107,15 @@ export const useEventStore = defineStore('events', () => {
   }
 
   function registerForEvent(eventId: string, name: string, count: number) {
+    const normalizedCount = Number(count)
+
     const existing = registrations.value.find(
       (r) => r.eventId === eventId && r.userId === currentUser.value.id,
     )
     if (existing) {
       // Update existing registration
       existing.name = name
-      existing.count = count
+      existing.count = normalizedCount
       // Re-evaluate status if needed, for now keep as is or reset to pending?
       // Let's keep it simple: if updating, maybe just update details.
       // But user might want to change count.
@@ -125,16 +127,16 @@ export const useEventStore = defineStore('events', () => {
 
     const currentParticipants = registrations.value
       .filter((r) => r.eventId === eventId && (r.status === 'approved' || r.status === 'pending'))
-      .reduce((sum, r) => sum + r.count, 0)
+      .reduce((sum, r) => sum + Number(r.count), 0)
 
-    const status = currentParticipants + count > event.maxParticipants ? 'waitlist' : 'approved'
+    const status = currentParticipants + normalizedCount > event.maxParticipants ? 'waitlist' : 'approved'
 
     const newRegistration: Registration = {
       id: `r${Date.now()}`,
       eventId,
       userId: currentUser.value.id,
       name,
-      count,
+      count: normalizedCount,
       status,
       timestamp: new Date().toISOString(),
     }
@@ -148,8 +150,11 @@ export const useEventStore = defineStore('events', () => {
     const event = events.value.find((e) => e.id === reg.eventId)
     if (!event) return
 
+    const normalizedCount =
+      updates.count !== undefined ? Number(updates.count) : undefined
+
     // If count is increasing, check if we need to move to waitlist
-    if (updates.count !== undefined && updates.count > reg.count) {
+    if (normalizedCount !== undefined && normalizedCount > reg.count) {
       const otherParticipants = registrations.value
         .filter(
           (r) =>
@@ -157,9 +162,9 @@ export const useEventStore = defineStore('events', () => {
             r.id !== reg.id &&
             (r.status === 'approved' || r.status === 'pending'),
         )
-        .reduce((sum, r) => sum + r.count, 0)
+        .reduce((sum, r) => sum + Number(r.count), 0)
 
-      if (otherParticipants + updates.count > event.maxParticipants) {
+      if (otherParticipants + normalizedCount > event.maxParticipants) {
         updates.status = 'waitlist'
       } else {
         // If previously waitlisted but now fits (unlikely if increasing, but possible if others left),
@@ -169,7 +174,7 @@ export const useEventStore = defineStore('events', () => {
           updates.status = 'pending'
         }
       }
-    } else if (updates.count !== undefined && updates.count < reg.count) {
+    } else if (normalizedCount !== undefined && normalizedCount < reg.count) {
       // If decreasing count, and was waitlisted, check if it now fits?
       // For now, let's just update the count.
       // Auto-promoting from waitlist is complex, let's leave it for now.
@@ -182,12 +187,16 @@ export const useEventStore = defineStore('events', () => {
               r.id !== reg.id &&
               (r.status === 'approved' || r.status === 'pending'),
           )
-          .reduce((sum, r) => sum + r.count, 0)
+          .reduce((sum, r) => sum + Number(r.count), 0)
 
-        if (otherParticipants + updates.count <= event.maxParticipants) {
+        if (otherParticipants + normalizedCount <= event.maxParticipants) {
           updates.status = 'pending'
         }
       }
+    }
+
+    if (normalizedCount !== undefined) {
+      updates.count = normalizedCount
     }
 
     Object.assign(reg, updates)

@@ -48,7 +48,7 @@ const duration = computed(() => {
 const currentParticipants = computed(() => {
   return registrations.value
     .filter(r => r.status === 'approved' || r.status === 'pending')
-    .reduce((sum, r) => sum + r.count, 0)
+    .reduce((sum, r) => sum + Number(r.count), 0)
 })
 
 const isFull = computed(() => {
@@ -58,7 +58,7 @@ const isFull = computed(() => {
 
 function handleRegister() {
   if (!event.value) return
-  store.registerForEvent(eventId, form.value.name, form.value.count)
+  store.registerForEvent(eventId, form.value.name, Number(form.value.count))
   showForm.value = false
 }
 
@@ -66,7 +66,7 @@ function handleUpdate() {
   if (!myRegistration.value) return
   store.updateRegistration(myRegistration.value.id, {
     name: form.value.name,
-    count: form.value.count
+    count: Number(form.value.count)
   })
   showForm.value = false
 }
