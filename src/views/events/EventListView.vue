@@ -1,0 +1,116 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useEventStore } from '@/stores/eventStore'
+import AppCard from '@/components/AppCard.vue'
+import AppButton from '@/components/AppButton.vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const store = useEventStore()
+
+const events = computed(() => store.events)
+
+function goToDetail(id: string) {
+  router.push(`/events/${id}`)
+}
+</script>
+
+<template>
+  <div class="container">
+    <div class="header">
+      <h1>近期活動</h1>
+      <AppButton @click="router.push('/events/create')">開新團</AppButton>
+    </div>
+
+    <div class="event-grid">
+      <AppCard v-for="event in events" :key="event.id" class="event-card">
+        <div class="event-content">
+          <div class="event-header">
+            <span class="badge">{{ event.level }}</span>
+            <span class="price">${{ event.price }}</span>
+          </div>
+          <h3>{{ event.title }}</h3>
+          <div class="info-row">
+            <span>📅 {{ event.date }}</span>
+            <span>⏰ {{ event.time }}</span>
+          </div>
+          <div class="info-row">
+            <span>📍 {{ event.location }}</span>
+          </div>
+          <div class="participants">
+            <span>👥 {{ event.maxParticipants }} 人滿團</span>
+          </div>
+          <AppButton variant="outline" class="action-btn" @click="goToDetail(event.id)">
+            查看詳情
+          </AppButton>
+        </div>
+      </AppCard>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.event-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-lg);
+}
+
+.event-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.badge {
+  background-color: var(--color-bg-body);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+.price {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+}
+
+.info-row {
+  display: flex;
+  gap: var(--spacing-md);
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.participants {
+  margin-top: var(--spacing-xs);
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+}
+
+.action-btn {
+  margin-top: var(--spacing-md);
+  width: 100%;
+}
+</style>
