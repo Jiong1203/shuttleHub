@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useEventStore } from '@/stores/eventStore'
+import { useAuthStore } from '@/stores/authStore'
 import AppButton from '@/components/AppButton.vue'
 import AppCard from '@/components/AppCard.vue'
 import AppInput from '@/components/AppInput.vue'
@@ -9,11 +10,12 @@ import AppInput from '@/components/AppInput.vue'
 const route = useRoute()
 const router = useRouter()
 const store = useEventStore()
+const authStore = useAuthStore()
 
 const eventId = route.params.id as string
 const event = computed(() => store.getEventById(eventId))
 const registrations = computed(() => store.getRegistrationsByEventId(eventId))
-const myRegistration = computed(() => registrations.value.find(r => r.userId === store.currentUser.id))
+const myRegistration = computed(() => registrations.value.find(r => r.userId === authStore.currentUser?.id))
 const isRegistered = computed(() => !!myRegistration.value)
 
 const approvedRegistrations = computed(() => {
@@ -25,7 +27,7 @@ const approvedRegistrations = computed(() => {
 // Form state
 const showForm = ref(false)
 const form = ref({
-  name: store.currentUser.name,
+  name: authStore.currentUser?.name || '',
   count: 1
 })
 
@@ -37,12 +39,27 @@ watch(myRegistration, (newReg) => {
   }
 }, { immediate: true })
 
+// Set default name from auth store
+watch(() => authStore.currentUser, (user) => {
+  if (user && !myRegistration.value) {
+    form.value.name = user.name
+  }
+}, { immediate: true })
+
 const duration = computed(() => {
   const ev = event.value
   if (!ev || !ev.startTime || !ev.endTime) return 0
-  const start = parseInt(ev.startTime.split(':')[0] || '0')
-  const end = parseInt(ev.endTime.split(':')[0] || '0')
-  return end - start
+
+  // Parse hours and minutes
+  const [startHour = 0, startMin = 0] = ev.startTime.split(':').map(Number)
+  const [endHour = 0, endMin = 0] = ev.endTime.split(':').map(Number)
+
+  // Calculate total minutes
+  const startTotalMin = startHour * 60 + startMin
+  const endTotalMin = endHour * 60 + endMin
+
+  // Return hours (with decimals)
+  return (endTotalMin - startTotalMin) / 60
 })
 
 const currentParticipants = computed(() => {
@@ -140,23 +157,38 @@ function handleCancel() {
 
           <!-- Not Registered -->
           <div v-if="!isRegistered">
-            <div v-if="!showForm">
+            <!-- Not logged in -->
+            <div v-if="!authStore.isAuthenticated" class="login-prompt">
+              <p>請先登入才能報名活動</p>
               <AppButton
                 variant="primary"
                 class="full-width"
-                @click="showForm = true"
+                @click="router.push({ name: 'login', query: { redirect: $route.fullPath } })"
               >
-                {{ isFull ? '加入候補' : '立即報名' }}
+                前往登入
               </AppButton>
             </div>
-            <form v-else @submit.prevent="handleRegister" class="reg-form">
-              <AppInput v-model="form.name" label="報名名稱" required />
-              <AppInput v-model="form.count" type="number" label="報名人數" min="1" required />
-              <div class="form-actions">
-                <AppButton variant="text" size="sm" @click="showForm = false">取消</AppButton>
-                <AppButton type="submit" variant="primary" size="sm">確認</AppButton>
+
+            <!-- Logged in but not registered -->
+            <div v-else>
+              <div v-if="!showForm">
+                <AppButton
+                  variant="primary"
+                  class="full-width"
+                  @click="showForm = true"
+                >
+                  {{ isFull ? '加入候補' : '立即報名' }}
+                </AppButton>
               </div>
-            </form>
+              <form v-else @submit.prevent="handleRegister" class="reg-form">
+                <AppInput v-model="form.name" label="報名名稱" required />
+                <AppInput v-model="form.count" type="number" label="報名人數" min="1" required />
+                <div class="form-actions">
+                  <AppButton variant="text" size="sm" @click="showForm = false">取消</AppButton>
+                  <AppButton type="submit" variant="primary" size="sm">確認</AppButton>
+                </div>
+              </form>
+            </div>
           </div>
 
           <!-- Registered -->
@@ -340,6 +372,20 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+}
+
+.login-prompt {
+  text-align: center;
+  padding: var(--spacing-lg);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-accent);
+}
+
+.login-prompt p {
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-md);
+  font-size: 0.9375rem;
 }
 
 .not-found {

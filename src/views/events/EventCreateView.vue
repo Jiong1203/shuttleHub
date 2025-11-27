@@ -6,6 +6,7 @@ import { venues } from '@/data/venues'
 import AppButton from '@/components/AppButton.vue'
 import AppInput from '@/components/AppInput.vue'
 import AppCard from '@/components/AppCard.vue'
+import TimeSelect from '@/components/TimeSelect.vue'
 
 const router = useRouter()
 const store = useEventStore()
@@ -13,8 +14,8 @@ const store = useEventStore()
 const form = ref({
   title: '',
   date: '',
-  startTime: '',
-  endTime: '',
+  startTime: '', // Will be selected from TimeSelect dropdown
+  endTime: '',   // Will be selected from TimeSelect dropdown
   location: '',
   description: '',
   maxParticipants: 4,
@@ -47,8 +48,8 @@ function handleSubmit() {
           <div class="row">
             <AppInput v-model="form.date" type="date" label="日期" required />
             <div class="time-range">
-              <AppInput v-model="form.startTime" type="time" label="開始時間" required />
-              <AppInput v-model="form.endTime" type="time" label="結束時間" required />
+              <TimeSelect v-model="form.startTime" label="開始時間" required />
+              <TimeSelect v-model="form.endTime" label="結束時間" required />
             </div>
           </div>
 

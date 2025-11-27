@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useEventStore } from '@/stores/eventStore'
+import { useAuthStore } from '@/stores/authStore'
 import AppCard from '@/components/AppCard.vue'
 import AppButton from '@/components/AppButton.vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const store = useEventStore()
+const authStore = useAuthStore()
 
 // Filter events where the current user is the organizer
 const myEvents = computed(() =>
-  store.events.filter(e => e.organizerId === store.currentUser.id)
+  store.events.filter((e) => e.organizerId === authStore.currentUser?.id)
 )
 
 function deleteEvent(id: string) {

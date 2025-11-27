@@ -16,9 +16,17 @@ function goToDetail(id: string) {
 
 function getDuration(event: Event) {
   if (!event.startTime || !event.endTime) return 0
-  const start = parseInt(event.startTime.split(':')[0] || '0')
-  const end = parseInt(event.endTime.split(':')[0] || '0')
-  return end - start
+
+  // Parse hours and minutes
+  const [startHour = 0, startMin = 0] = event.startTime.split(':').map(Number)
+  const [endHour = 0, endMin = 0] = event.endTime.split(':').map(Number)
+
+  // Calculate total minutes
+  const startTotalMin = startHour * 60 + startMin
+  const endTotalMin = endHour * 60 + endMin
+
+  // Return hours (with decimals)
+  return (endTotalMin - startTotalMin) / 60
 }
 </script>
 

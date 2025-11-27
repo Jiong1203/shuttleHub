@@ -1,12 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-
-export interface User {
-  id: string
-  name: string
-  email: string
-  avatar?: string
-}
+import { useAuthStore } from './authStore'
 
 export interface Event {
   id: string
@@ -33,13 +27,9 @@ export interface Registration {
 }
 
 export const useEventStore = defineStore('events', () => {
-  // Mock Data
-  const currentUser = ref<User>({
-    id: 'u1',
-    name: 'Current User',
-    email: 'user@example.com',
-  })
+  const authStore = useAuthStore()
 
+  // Mock Data - using auth store's organizer account
   const events = ref<Event[]>([
     {
       id: 'e1',
@@ -50,7 +40,7 @@ export const useEventStore = defineStore('events', () => {
       location: 'Downtown Sports Center',
       description: 'Casual games, all levels welcome!',
       maxParticipants: 8,
-      organizerId: 'u1',
+      organizerId: 'organizer-1', // Using test organizer account
       level: 'All Levels',
       price: 150,
     },
@@ -63,7 +53,7 @@ export const useEventStore = defineStore('events', () => {
       location: 'City Gym Court 3',
       description: 'High intensity training for advanced players.',
       maxParticipants: 4,
-      organizerId: 'u2',
+      organizerId: 'organizer-1',
       level: 'Advanced',
       price: 300,
     },
@@ -73,7 +63,7 @@ export const useEventStore = defineStore('events', () => {
     {
       id: 'r1',
       eventId: 'e1',
-      userId: 'u2',
+      userId: 'member-1',
       name: 'Alice',
       count: 1,
       status: 'approved',
@@ -90,10 +80,14 @@ export const useEventStore = defineStore('events', () => {
 
   // Actions
   function createEvent(eventData: Omit<Event, 'id' | 'organizerId'>) {
+    if (!authStore.currentUser) {
+      throw new Error('Must be logged in to create event')
+    }
+
     const newEvent: Event = {
       ...eventData,
       id: `e${Date.now()}`,
-      organizerId: currentUser.value.id,
+      organizerId: authStore.currentUser.id,
     }
     events.value.push(newEvent)
     return newEvent
@@ -109,8 +103,12 @@ export const useEventStore = defineStore('events', () => {
   function registerForEvent(eventId: string, name: string, count: number) {
     const normalizedCount = Number(count)
 
+    if (!authStore.currentUser) {
+      return // Should not happen if UI is properly guarded
+    }
+
     const existing = registrations.value.find(
-      (r) => r.eventId === eventId && r.userId === currentUser.value.id,
+      (r) => r.eventId === eventId && r.userId === authStore.currentUser!.id,
     )
     if (existing) {
       // Update existing registration
@@ -129,12 +127,13 @@ export const useEventStore = defineStore('events', () => {
       .filter((r) => r.eventId === eventId && (r.status === 'approved' || r.status === 'pending'))
       .reduce((sum, r) => sum + Number(r.count), 0)
 
-    const status = currentParticipants + normalizedCount > event.maxParticipants ? 'waitlist' : 'approved'
+    const status =
+      currentParticipants + normalizedCount > event.maxParticipants ? 'waitlist' : 'approved'
 
     const newRegistration: Registration = {
       id: `r${Date.now()}`,
       eventId,
-      userId: currentUser.value.id,
+      userId: authStore.currentUser.id,
       name,
       count: normalizedCount,
       status,
@@ -150,8 +149,7 @@ export const useEventStore = defineStore('events', () => {
     const event = events.value.find((e) => e.id === reg.eventId)
     if (!event) return
 
-    const normalizedCount =
-      updates.count !== undefined ? Number(updates.count) : undefined
+    const normalizedCount = updates.count !== undefined ? Number(updates.count) : undefined
 
     // If count is increasing, check if we need to move to waitlist
     if (normalizedCount !== undefined && normalizedCount > reg.count) {
@@ -210,7 +208,6 @@ export const useEventStore = defineStore('events', () => {
   }
 
   return {
-    currentUser,
     events,
     registrations,
     getEventById,
