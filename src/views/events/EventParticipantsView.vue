@@ -102,7 +102,10 @@ function updateStatus(registrationId: string, status: 'approved' | 'rejected') {
 .stat-value {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--color-primary);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .stat-label {
@@ -131,13 +134,14 @@ function updateStatus(registrationId: string, status: 'approved' | 'rejected') {
 .avatar-placeholder {
   width: 40px;
   height: 40px;
-  background-color: var(--color-primary);
+  background: var(--gradient-primary);
   color: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 600;
+  box-shadow: var(--shadow-sm);
 }
 
 .user-name {
@@ -179,13 +183,15 @@ function updateStatus(registrationId: string, status: 'approved' | 'rejected') {
 }
 
 .status-badge.waitlist {
-  background-color: var(--color-text-muted);
+  background-color: var(--color-secondary);
   color: white;
+  box-shadow: var(--shadow-sm);
 }
 
 .status-badge.approved {
   background-color: var(--color-success);
   color: white;
+  box-shadow: var(--shadow-sm);
 }
 
 .status-badge.rejected {

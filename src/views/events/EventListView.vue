@@ -84,17 +84,19 @@ function getDuration(event: Event) {
 }
 
 .badge {
-  background-color: var(--color-bg-body);
-  padding: 2px 8px;
+  background: var(--gradient-secondary);
+  padding: 4px 12px;
   border-radius: var(--radius-full);
   font-size: 0.75rem;
-  color: var(--color-text-muted);
-  border: 1px solid var(--color-border);
+  color: white;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
 }
 
 .price {
   font-weight: 700;
   color: var(--color-primary);
+  font-size: 1.125rem;
 }
 
 h3 {
@@ -119,5 +121,10 @@ h3 {
 .action-btn {
   margin-top: var(--spacing-md);
   width: 100%;
+}
+
+.event-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
 }
 </style>

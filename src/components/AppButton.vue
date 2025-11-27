@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineProps<{
-  variant?: 'primary' | 'outline' | 'danger' | 'text'
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'text'
   size?: 'sm' | 'md' | 'lg'
   type?: 'button' | 'submit' | 'reset'
   disabled?: boolean
@@ -29,9 +29,11 @@ defineProps<{
   border-radius: var(--radius-md);
   font-weight: 500;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-normal);
   border: 1px solid transparent;
   gap: var(--spacing-sm);
+  position: relative;
+  overflow: hidden;
 }
 
 .app-button:disabled {
@@ -39,13 +41,31 @@ defineProps<{
   cursor: not-allowed;
 }
 
+.app-button:not(:disabled):active {
+  transform: translateY(1px);
+}
+
 /* Variants */
 .variant-primary {
   background-color: var(--color-primary);
   color: white;
+  box-shadow: var(--shadow-sm);
 }
 .variant-primary:hover:not(:disabled) {
   background-color: var(--color-primary-hover);
+  box-shadow: var(--shadow-green);
+  transform: translateY(-1px);
+}
+
+.variant-secondary {
+  background-color: var(--color-secondary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+.variant-secondary:hover:not(:disabled) {
+  background-color: var(--color-secondary-hover);
+  box-shadow: var(--shadow-purple);
+  transform: translateY(-1px);
 }
 
 .variant-outline {
@@ -56,14 +76,17 @@ defineProps<{
 .variant-outline:hover:not(:disabled) {
   border-color: var(--color-primary);
   color: var(--color-primary);
+  background-color: var(--color-primary-light);
 }
 
 .variant-danger {
   background-color: var(--color-danger);
   color: white;
+  box-shadow: var(--shadow-sm);
 }
 .variant-danger:hover:not(:disabled) {
   opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .variant-text {
@@ -72,7 +95,7 @@ defineProps<{
 }
 .variant-text:hover:not(:disabled) {
   color: var(--color-text-main);
-  background-color: var(--color-bg-surface);
+  background-color: var(--color-bg-body);
 }
 
 /* Sizes */

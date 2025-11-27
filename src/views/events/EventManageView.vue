@@ -9,7 +9,7 @@ const router = useRouter()
 const store = useEventStore()
 
 // Filter events where the current user is the organizer
-const myEvents = computed(() => 
+const myEvents = computed(() =>
   store.events.filter(e => e.organizerId === store.currentUser.id)
 )
 
@@ -36,7 +36,7 @@ function deleteEvent(id: string) {
         <div class="event-info">
           <h3>{{ event.title }}</h3>
           <div class="meta">
-            <span>{{ event.date }} {{ event.time }}</span>
+            <span>{{ event.date }} {{ event.startTime }} - {{ event.endTime }}</span>
             <span>{{ event.location }}</span>
           </div>
         </div>

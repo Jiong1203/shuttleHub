@@ -26,12 +26,15 @@ import AppButton from './AppButton.vue'
 
 <style scoped>
 .navbar {
-  background-color: var(--color-bg-surface);
-  border-bottom: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px) saturate(180%);
+  border-bottom: 3px solid transparent;
+  border-image: var(--gradient-primary) 1;
   padding: var(--spacing-md) 0;
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .navbar-content {
@@ -43,8 +46,16 @@ import AppButton from './AppButton.vue'
 .logo {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--color-primary);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   text-decoration: none;
+  transition: transform var(--transition-normal);
+}
+
+.logo:hover {
+  transform: scale(1.05);
 }
 
 .nav-links {
@@ -55,12 +66,30 @@ import AppButton from './AppButton.vue'
 .nav-link {
   color: var(--color-text-muted);
   font-weight: 500;
-  transition: color var(--transition-fast);
+  transition: all var(--transition-fast);
+  position: relative;
+  padding-bottom: 4px;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--gradient-primary);
+  transition: width var(--transition-normal);
 }
 
 .nav-link:hover,
 .nav-link.router-link-active {
   color: var(--color-primary);
+}
+
+.nav-link:hover::after,
+.nav-link.router-link-active::after {
+  width: 100%;
 }
 
 .user-actions {

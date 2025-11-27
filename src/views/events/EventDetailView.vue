@@ -212,12 +212,14 @@ function handleCancel() {
 
 .badge {
   display: inline-block;
-  background-color: var(--color-primary);
+  background: var(--gradient-secondary);
   color: white;
-  padding: 4px 12px;
+  padding: 6px 16px;
   border-radius: var(--radius-full);
   font-size: 0.875rem;
+  font-weight: 600;
   margin-bottom: var(--spacing-sm);
+  box-shadow: var(--shadow-purple);
 }
 
 h1 {
@@ -268,7 +270,10 @@ h1 {
 .progress {
   font-size: 2.5rem;
   font-weight: 700;
-  color: var(--color-primary);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .total {
@@ -312,11 +317,13 @@ h1 {
 .status-badge.approved {
   background-color: var(--color-success);
   color: white;
+  box-shadow: var(--shadow-green);
 }
 
 .status-badge.waitlist {
-  background-color: var(--color-warning);
-  color: black;
+  background-color: var(--color-secondary);
+  color: white;
+  box-shadow: var(--shadow-purple);
 }
 
 .reg-details {

@@ -153,6 +153,7 @@ h1 {
 .textarea-input:focus {
   border-color: var(--color-primary);
   outline: none;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 
 .actions {
