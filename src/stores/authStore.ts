@@ -31,8 +31,10 @@ export const useAuthStore = defineStore('auth', () => {
   // Initialize from localStorage
   function init() {
     const storedUsers = localStorage.getItem('shuttlehub_users')
-    const storedCurrentUserId = localStorage.getItem('shuttlehub_current_user_id')
+    const storedUser = localStorage.getItem('user')
+    const token = localStorage.getItem('token')
 
+    // 保留舊的 users 資料（用於團長申請等功能）
     if (storedUsers) {
       users.value = JSON.parse(storedUsers)
     } else {
@@ -66,10 +68,22 @@ export const useAuthStore = defineStore('auth', () => {
       saveUsers()
     }
 
-    if (storedCurrentUserId) {
-      const user = users.value.find((u) => u.id === storedCurrentUserId)
-      if (user) {
-        currentUser.value = user
+    // 從後端 API 載入使用者資訊
+    if (storedUser && token) {
+      try {
+        const user = JSON.parse(storedUser)
+        currentUser.value = {
+          id: user.id.toString(),
+          email: user.email,
+          password: '',
+          name: user.name,
+          role: user.role.toLowerCase() as 'member' | 'organizer' | 'admin',
+          createdAt: user.createdAt || new Date().toISOString(),
+        }
+      } catch (error) {
+        console.error('載入使用者資訊失敗:', error)
+        localStorage.removeItem('user')
+        localStorage.removeItem('token')
       }
     }
   }
@@ -79,68 +93,95 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.setItem('shuttlehub_users', JSON.stringify(users.value))
   }
 
-  // Helper to save current user
-  function saveCurrentUser() {
-    if (currentUser.value) {
-      localStorage.setItem('shuttlehub_current_user_id', currentUser.value.id)
-    } else {
-      localStorage.removeItem('shuttlehub_current_user_id')
-    }
-  }
-
   // Register new user
-  function register(
+  async function register(
     email: string,
     password: string,
     name: string,
-  ): { success: boolean; error?: string } {
-    // Check if email already exists
-    if (users.value.find((u) => u.email === email)) {
-      return { success: false, error: '此 Email 已被註冊' }
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch('http://localhost:3001/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, name }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        return { success: false, error: data.message || '註冊失敗' }
+      }
+
+      // 儲存 Token 和使用者資訊
+      localStorage.setItem('token', data.data.token)
+      localStorage.setItem('user', JSON.stringify(data.data.user))
+
+      // 更新當前使用者
+      currentUser.value = {
+        id: data.data.user.id.toString(),
+        email: data.data.user.email,
+        password: '', // 不儲存密碼
+        name: data.data.user.name,
+        role: data.data.user.role.toLowerCase() as 'member' | 'organizer' | 'admin',
+        createdAt: new Date().toISOString(),
+      }
+
+      return { success: true }
+    } catch (error) {
+      console.error('註冊錯誤:', error)
+      return { success: false, error: '網路錯誤，請稍後再試' }
     }
-
-    // Create new user
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      email,
-      password, // In production, this should be hashed on backend
-      name,
-      role: 'member',
-      createdAt: new Date().toISOString(),
-    }
-
-    users.value.push(newUser)
-    saveUsers()
-
-    // Auto login after registration
-    currentUser.value = newUser
-    saveCurrentUser()
-
-    return { success: true }
   }
 
   // Login
-  function login(email: string, password: string): { success: boolean; error?: string } {
-    const user = users.value.find((u) => u.email === email)
+  async function login(
+    email: string,
+    password: string,
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch('http://localhost:3001/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
 
-    if (!user) {
-      return { success: false, error: '帳號不存在' }
+      const data = await response.json()
+
+      if (!response.ok) {
+        return { success: false, error: data.message || '登入失敗' }
+      }
+
+      // 儲存 Token 和使用者資訊
+      localStorage.setItem('token', data.data.token)
+      localStorage.setItem('user', JSON.stringify(data.data.user))
+
+      // 更新當前使用者
+      currentUser.value = {
+        id: data.data.user.id.toString(),
+        email: data.data.user.email,
+        password: '', // 不儲存密碼
+        name: data.data.user.name,
+        role: data.data.user.role.toLowerCase() as 'member' | 'organizer' | 'admin',
+        createdAt: new Date().toISOString(),
+      }
+
+      return { success: true }
+    } catch (error) {
+      console.error('登入錯誤:', error)
+      return { success: false, error: '網路錯誤，請稍後再試' }
     }
-
-    if (user.password !== password) {
-      return { success: false, error: '密碼錯誤' }
-    }
-
-    currentUser.value = user
-    saveCurrentUser()
-
-    return { success: true }
   }
 
   // Logout
   function logout() {
     currentUser.value = null
-    saveCurrentUser()
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    localStorage.removeItem('shuttlehub_current_user_id')
   }
 
   // Apply to become organizer

@@ -69,14 +69,17 @@ defineProps<{
 }
 
 .variant-outline {
-  background-color: transparent;
-  border-color: var(--color-border);
-  color: var(--color-text-main);
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 2px solid var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
 }
 .variant-outline:hover:not(:disabled) {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background-color: var(--color-primary-light);
+  border-color: var(--color-primary-hover);
+  color: white;
+  background-color: var(--color-primary);
+  box-shadow: var(--shadow-green);
+  transform: translateY(-1px);
 }
 
 .variant-danger {

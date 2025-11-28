@@ -19,7 +19,7 @@ const router = useRouter()
         </p>
         <div class="hero-actions">
           <AppButton size="lg" @click="router.push('/events')">尋找活動</AppButton>
-          <AppButton size="lg" variant="outline" @click="router.push('/events/create')">我要開團</AppButton>
+          <AppButton size="lg" variant="secondary" @click="router.push('/events/create')">我要開團</AppButton>
         </div>
       </div>
     </section>
