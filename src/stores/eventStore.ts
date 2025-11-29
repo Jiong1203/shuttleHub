@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAuthStore } from './authStore'
+import api from '../services/api'
 
 export interface Event {
   id: string
@@ -10,66 +11,36 @@ export interface Event {
   endTime: string
   location: string
   description: string
-  maxParticipants: number
+  maxAttendees: number
   organizerId: string
-  level: 'Beginner' | 'Intermediate' | 'Advanced' | 'All Levels'
   price: number
+  organizer?: {
+    id: number
+    name: string
+    email: string
+  }
+  registrations?: Registration[]
 }
 
 export interface Registration {
   id: string
   eventId: string
   userId: string
-  name: string
-  count: number
-  status: 'pending' | 'approved' | 'rejected' | 'waitlist'
-  timestamp: string
+  participantName: string
+  numberOfPeople: number
+  status: 'CONFIRMED' | 'WAITLISTED'
+  createdAt: string
+  updatedAt: string
 }
 
 export const useEventStore = defineStore('events', () => {
   const authStore = useAuthStore()
 
-  // Mock Data - using auth store's organizer account
-  const events = ref<Event[]>([
-    {
-      id: 'e1',
-      title: 'Friday Night Badminton',
-      date: '2023-11-24',
-      startTime: '19:00',
-      endTime: '21:00',
-      location: 'Downtown Sports Center',
-      description: 'Casual games, all levels welcome!',
-      maxParticipants: 8,
-      organizerId: 'organizer-1', // Using test organizer account
-      level: 'All Levels',
-      price: 150,
-    },
-    {
-      id: 'e2',
-      title: 'Advanced Training Session',
-      date: '2023-11-25',
-      startTime: '14:00',
-      endTime: '16:00',
-      location: 'City Gym Court 3',
-      description: 'High intensity training for advanced players.',
-      maxParticipants: 4,
-      organizerId: 'organizer-1',
-      level: 'Advanced',
-      price: 300,
-    },
-  ])
-
-  const registrations = ref<Registration[]>([
-    {
-      id: 'r1',
-      eventId: 'e1',
-      userId: 'member-1',
-      name: 'Alice',
-      count: 1,
-      status: 'approved',
-      timestamp: new Date().toISOString(),
-    },
-  ])
+  // State
+  const events = ref<Event[]>([])
+  const registrations = ref<Registration[]>([])
+  const loading = ref(false)
+  const error = ref<string | null>(null)
 
   // Getters
   const getEventById = computed(() => (id: string) => events.value.find((e) => e.id === id))
@@ -79,143 +50,260 @@ export const useEventStore = defineStore('events', () => {
   )
 
   // Actions
-  function createEvent(eventData: Omit<Event, 'id' | 'organizerId'>) {
-    if (!authStore.currentUser) {
-      throw new Error('Must be logged in to create event')
+  async function fetchEvents() {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await api.get('/events')
+      if (response.data.success) {
+        events.value = response.data.data.events.map((event: any) => ({
+          id: event.id.toString(),
+          title: event.title,
+          date: event.date,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          location: event.location,
+          description: event.description,
+          maxAttendees: event.maxAttendees,
+          organizerId: event.organizerId.toString(),
+          price: event.price,
+          organizer: event.organizer,
+          registrations: event.registrations,
+        }))
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '載入活動失敗'
+      console.error('載入活動錯誤:', err)
+    } finally {
+      loading.value = false
     }
-
-    const newEvent: Event = {
-      ...eventData,
-      id: `e${Date.now()}`,
-      organizerId: authStore.currentUser.id,
-    }
-    events.value.push(newEvent)
-    return newEvent
   }
 
-  function deleteEvent(id: string) {
-    const index = events.value.findIndex((e) => e.id === id)
-    if (index !== -1) {
-      events.value.splice(index, 1)
+  async function fetchEventById(id: string) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await api.get(`/events/${id}`)
+      if (response.data.success) {
+        const event = response.data.data
+        return {
+          id: event.id.toString(),
+          title: event.title,
+          date: event.date,
+          startTime: event.startTime,
+          endTime: event.endTime,
+          location: event.location,
+          description: event.description,
+          maxAttendees: event.maxAttendees,
+          organizerId: event.organizerId.toString(),
+          price: event.price,
+          organizer: event.organizer,
+          registrations: event.registrations,
+        }
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '載入活動詳情失敗'
+      console.error('載入活動詳情錯誤:', err)
+      return null
+    } finally {
+      loading.value = false
     }
   }
 
-  function registerForEvent(eventId: string, name: string, count: number) {
-    const normalizedCount = Number(count)
-
+  async function createEvent(eventData: {
+    title: string
+    description: string
+    date: string
+    startTime: string
+    endTime: string
+    location: string
+    price: number
+    maxAttendees: number
+  }) {
     if (!authStore.currentUser) {
-      return // Should not happen if UI is properly guarded
+      throw new Error('必須登入才能建立活動')
     }
 
-    const existing = registrations.value.find(
-      (r) => r.eventId === eventId && r.userId === authStore.currentUser!.id,
-    )
-    if (existing) {
-      // Update existing registration
-      existing.name = name
-      existing.count = normalizedCount
-      // Re-evaluate status if needed, for now keep as is or reset to pending?
-      // Let's keep it simple: if updating, maybe just update details.
-      // But user might want to change count.
+    loading.value = true
+    error.value = null
+    try {
+      const response = await api.post('/events', eventData)
+      if (response.data.success) {
+        const newEvent = response.data.data
+        const event = {
+          id: newEvent.id.toString(),
+          title: newEvent.title,
+          date: newEvent.date,
+          startTime: newEvent.startTime,
+          endTime: newEvent.endTime,
+          location: newEvent.location,
+          description: newEvent.description,
+          maxAttendees: newEvent.maxAttendees,
+          organizerId: newEvent.organizerId.toString(),
+          price: newEvent.price,
+        }
+        events.value.push(event)
+        return event
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '建立活動失敗'
+      console.error('建立活動錯誤:', err)
+      throw new Error(error.value)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function updateEvent(id: string, updates: Partial<Event>) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await api.put(`/events/${id}`, updates)
+      if (response.data.success) {
+        const updatedEvent = response.data.data
+        const index = events.value.findIndex((e) => e.id === id)
+        if (index !== -1) {
+          events.value[index] = {
+            ...events.value[index],
+            ...updatedEvent,
+            id: updatedEvent.id.toString(),
+            organizerId: updatedEvent.organizerId.toString(),
+          }
+        }
+        return updatedEvent
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '更新活動失敗'
+      console.error('更新活動錯誤:', err)
+      throw new Error(error.value)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function deleteEvent(id: string) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await api.delete(`/events/${id}`)
+      if (response.data.success) {
+        const index = events.value.findIndex((e) => e.id === id)
+        if (index !== -1) {
+          events.value.splice(index, 1)
+        }
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '刪除活動失敗'
+      console.error('刪除活動錯誤:', err)
+      throw new Error(error.value)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function registerForEvent(
+    eventId: string,
+    participantName: string,
+    numberOfPeople: number,
+  ) {
+    if (!authStore.currentUser) {
+      throw new Error('必須登入才能報名')
+    }
+
+    loading.value = true
+    error.value = null
+    try {
+      const response = await api.post(`/events/${eventId}/register`, {
+        participantName,
+        numberOfPeople,
+      })
+      if (response.data.success) {
+        const newRegistration = response.data.data
+        const registration = {
+          id: newRegistration.id.toString(),
+          eventId: newRegistration.eventId.toString(),
+          userId: newRegistration.userId.toString(),
+          participantName: newRegistration.participantName,
+          numberOfPeople: newRegistration.numberOfPeople,
+          status: newRegistration.status,
+          createdAt: newRegistration.createdAt,
+          updatedAt: newRegistration.updatedAt,
+        }
+        registrations.value.push(registration)
+        return registration
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '報名失敗'
+      console.error('報名錯誤:', err)
+      throw new Error(error.value)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function cancelRegistration(id: string) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await api.delete(`/registrations/${id}`)
+      if (response.data.success) {
+        const index = registrations.value.findIndex((r) => r.id === id)
+        if (index !== -1) {
+          registrations.value.splice(index, 1)
+        }
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '取消報名失敗'
+      console.error('取消報名錯誤:', err)
+      throw new Error(error.value)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchMyRegistrations() {
+    if (!authStore.currentUser) {
       return
     }
 
-    const event = events.value.find((e) => e.id === eventId)
-    if (!event) return
-
-    const currentParticipants = registrations.value
-      .filter((r) => r.eventId === eventId && (r.status === 'approved' || r.status === 'pending'))
-      .reduce((sum, r) => sum + Number(r.count), 0)
-
-    const status =
-      currentParticipants + normalizedCount > event.maxParticipants ? 'waitlist' : 'approved'
-
-    const newRegistration: Registration = {
-      id: `r${Date.now()}`,
-      eventId,
-      userId: authStore.currentUser.id,
-      name,
-      count: normalizedCount,
-      status,
-      timestamp: new Date().toISOString(),
-    }
-    registrations.value.push(newRegistration)
-  }
-
-  function updateRegistration(id: string, updates: Partial<Registration>) {
-    const reg = registrations.value.find((r) => r.id === id)
-    if (!reg) return
-
-    const event = events.value.find((e) => e.id === reg.eventId)
-    if (!event) return
-
-    const normalizedCount = updates.count !== undefined ? Number(updates.count) : undefined
-
-    // If count is increasing, check if we need to move to waitlist
-    if (normalizedCount !== undefined && normalizedCount > reg.count) {
-      const otherParticipants = registrations.value
-        .filter(
-          (r) =>
-            r.eventId === reg.eventId &&
-            r.id !== reg.id &&
-            (r.status === 'approved' || r.status === 'pending'),
-        )
-        .reduce((sum, r) => sum + Number(r.count), 0)
-
-      if (otherParticipants + normalizedCount > event.maxParticipants) {
-        updates.status = 'waitlist'
-      } else {
-        // If previously waitlisted but now fits (unlikely if increasing, but possible if others left),
-        // or if it was pending/approved and still fits, keep/set to pending/approved.
-        // For simplicity, if it fits, we can set to pending (if it was waitlist) or keep current.
-        if (reg.status === 'waitlist') {
-          updates.status = 'pending'
-        }
+    loading.value = true
+    error.value = null
+    try {
+      const response = await api.get('/registrations/me')
+      if (response.data.success) {
+        registrations.value = response.data.data.map((reg: any) => ({
+          id: reg.id.toString(),
+          eventId: reg.eventId.toString(),
+          userId: reg.userId.toString(),
+          participantName: reg.participantName,
+          numberOfPeople: reg.numberOfPeople,
+          status: reg.status,
+          createdAt: reg.createdAt,
+          updatedAt: reg.updatedAt,
+        }))
       }
-    } else if (normalizedCount !== undefined && normalizedCount < reg.count) {
-      // If decreasing count, and was waitlisted, check if it now fits?
-      // For now, let's just update the count.
-      // Auto-promoting from waitlist is complex, let's leave it for now.
-      // But if THIS registration was waitlisted and now fits, we could promote it.
-      if (reg.status === 'waitlist') {
-        const otherParticipants = registrations.value
-          .filter(
-            (r) =>
-              r.eventId === reg.eventId &&
-              r.id !== reg.id &&
-              (r.status === 'approved' || r.status === 'pending'),
-          )
-          .reduce((sum, r) => sum + Number(r.count), 0)
-
-        if (otherParticipants + normalizedCount <= event.maxParticipants) {
-          updates.status = 'pending'
-        }
-      }
-    }
-
-    if (normalizedCount !== undefined) {
-      updates.count = normalizedCount
-    }
-
-    Object.assign(reg, updates)
-  }
-
-  function cancelRegistration(id: string) {
-    const index = registrations.value.findIndex((r) => r.id === id)
-    if (index !== -1) {
-      registrations.value.splice(index, 1)
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '載入報名紀錄失敗'
+      console.error('載入報名紀錄錯誤:', err)
+    } finally {
+      loading.value = false
     }
   }
 
   return {
     events,
     registrations,
+    loading,
+    error,
     getEventById,
     getRegistrationsByEventId,
+    fetchEvents,
+    fetchEventById,
     createEvent,
+    updateEvent,
     deleteEvent,
     registerForEvent,
-    updateRegistration,
     cancelRegistration,
+    fetchMyRegistrations,
   }
 })

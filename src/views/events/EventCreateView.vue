@@ -29,7 +29,7 @@ function handleSubmit() {
 
   store.createEvent({
     ...form.value,
-    maxParticipants: Number(form.value.maxParticipants),
+    maxAttendees: Number(form.value.maxParticipants),
     price: Number(form.value.price)
   })
 

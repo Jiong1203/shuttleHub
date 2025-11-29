@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 使用者模型
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  password      String         // bcrypt 加密
+  name          String
+  role          Role           @default(MEMBER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // 關聯
+  organizedEvents Event[]      @relation("EventOrganizer")
+  registrations   Registration[]
+}
+
+// 活動模型
+model Event {
+  id            Int            @id @default(autoincrement())
+  title         String
+  description   String
+  date          DateTime
+  startTime     String         // 格式: "HH:mm"
+  endTime       String         // 格式: "HH:mm"
+  location      String
+  price         Int            // 以元為單位
+  maxAttendees  Int
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  // 關聯
+  organizer     User           @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
+  organizerId   Int
+  registrations Registration[]
+}
+
+// 報名模型
+model Registration {
+  id              Int                @id @default(autoincrement())
+  participantName String             // 報名者姓名
+  numberOfPeople  Int                @default(1) // 報名人數
+  status          RegistrationStatus @default(CONFIRMED)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  // 關聯
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        Int
+  event         Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId       Int
+
+  // 同一使用者對同一活動只能報名一次
+  @@unique([userId, eventId])
+}
+
+// 角色枚舉
+enum Role {
+  MEMBER
+  ORGANIZER
+  ADMIN
+}
+
+// 報名狀態枚舉
+enum RegistrationStatus {
+  CONFIRMED
+  WAITLISTED
+}
