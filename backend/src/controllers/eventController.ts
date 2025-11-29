@@ -35,6 +35,7 @@ export const createEvent = async (req: Request, res: Response) => {
     res.status(201).json({ success: true, data: event })
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : '建立活動失敗'
+    console.error('Create Event Error:', error)
     res.status(400).json({ success: false, message })
   }
 }
