@@ -69,9 +69,29 @@ npm install
 
 ### 步驟二：設定環境變數
 
-後端已配置 Supabase 雲端資料庫，`.env` 檔案已包含連線資訊。
+#### 本地開發環境
 
-> **注意**: `.env` 檔案已被 `.gitignore` 忽略，如需查看配置請參考 `backend/.env.example`
+在專案根目錄創建 `.env` 文件（如果不存在）：
+
+```env
+VITE_API_URL=http://localhost:3001/api
+```
+
+#### 生產環境（Vercel 部署）
+
+在 Vercel 專案設置中添加環境變數：
+
+1. 進入 Vercel 專案 Dashboard
+2. 點擊 **Settings** → **Environment Variables**
+3. 添加以下環境變數：
+   - **Name**: `VITE_API_URL`
+   - **Value**: 您的後端 API URL（例如：`https://your-backend-api.vercel.app/api` 或 `https://api.yourdomain.com/api`）
+   - **Environment**: 選擇 `Production`、`Preview` 和 `Development`（根據需要）
+
+> **注意**: 
+> - 前端環境變數必須以 `VITE_` 開頭才能在 Vite 中使用
+> - 後端已配置 Supabase 雲端資料庫，`.env` 檔案已包含連線資訊
+> - 後端的 `.env` 檔案已被 `.gitignore` 忽略，如需查看配置請參考 `backend/.env.example`
 
 ### 步驟三：啟動專案
 

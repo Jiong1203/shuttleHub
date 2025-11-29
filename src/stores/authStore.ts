@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import api from '../services/api'
 
 export interface User {
   id: string
@@ -100,38 +101,30 @@ export const useAuthStore = defineStore('auth', () => {
     name: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const response = await fetch('http://localhost:3001/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password, name }),
-      })
+      const response = await api.post('/auth/register', { email, password, name })
 
-      const data = await response.json()
+      if (response.data.success) {
+        // 儲存 Token 和使用者資訊
+        localStorage.setItem('token', response.data.data.token)
+        localStorage.setItem('user', JSON.stringify(response.data.data.user))
 
-      if (!response.ok) {
-        return { success: false, error: data.message || '註冊失敗' }
+        // 更新當前使用者
+        currentUser.value = {
+          id: response.data.data.user.id.toString(),
+          email: response.data.data.user.email,
+          password: '', // 不儲存密碼
+          name: response.data.data.user.name,
+          role: response.data.data.user.role.toLowerCase() as 'member' | 'organizer' | 'admin',
+          createdAt: new Date().toISOString(),
+        }
+
+        return { success: true }
       }
 
-      // 儲存 Token 和使用者資訊
-      localStorage.setItem('token', data.data.token)
-      localStorage.setItem('user', JSON.stringify(data.data.user))
-
-      // 更新當前使用者
-      currentUser.value = {
-        id: data.data.user.id.toString(),
-        email: data.data.user.email,
-        password: '', // 不儲存密碼
-        name: data.data.user.name,
-        role: data.data.user.role.toLowerCase() as 'member' | 'organizer' | 'admin',
-        createdAt: new Date().toISOString(),
-      }
-
-      return { success: true }
-    } catch (error) {
+      return { success: false, error: response.data.message || '註冊失敗' }
+    } catch (error: any) {
       console.error('註冊錯誤:', error)
-      return { success: false, error: '網路錯誤，請稍後再試' }
+      return { success: false, error: error.response?.data?.message || '網路錯誤，請稍後再試' }
     }
   }
 
@@ -141,38 +134,30 @@ export const useAuthStore = defineStore('auth', () => {
     password: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const response = await fetch('http://localhost:3001/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      })
+      const response = await api.post('/auth/login', { email, password })
 
-      const data = await response.json()
+      if (response.data.success) {
+        // 儲存 Token 和使用者資訊
+        localStorage.setItem('token', response.data.data.token)
+        localStorage.setItem('user', JSON.stringify(response.data.data.user))
 
-      if (!response.ok) {
-        return { success: false, error: data.message || '登入失敗' }
+        // 更新當前使用者
+        currentUser.value = {
+          id: response.data.data.user.id.toString(),
+          email: response.data.data.user.email,
+          password: '', // 不儲存密碼
+          name: response.data.data.user.name,
+          role: response.data.data.user.role.toLowerCase() as 'member' | 'organizer' | 'admin',
+          createdAt: new Date().toISOString(),
+        }
+
+        return { success: true }
       }
 
-      // 儲存 Token 和使用者資訊
-      localStorage.setItem('token', data.data.token)
-      localStorage.setItem('user', JSON.stringify(data.data.user))
-
-      // 更新當前使用者
-      currentUser.value = {
-        id: data.data.user.id.toString(),
-        email: data.data.user.email,
-        password: '', // 不儲存密碼
-        name: data.data.user.name,
-        role: data.data.user.role.toLowerCase() as 'member' | 'organizer' | 'admin',
-        createdAt: new Date().toISOString(),
-      }
-
-      return { success: true }
-    } catch (error) {
+      return { success: false, error: response.data.message || '登入失敗' }
+    } catch (error: any) {
       console.error('登入錯誤:', error)
-      return { success: false, error: '網路錯誤，請稍後再試' }
+      return { success: false, error: error.response?.data?.message || '網路錯誤，請稍後再試' }
     }
   }
 
