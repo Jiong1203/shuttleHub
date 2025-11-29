@@ -41,7 +41,6 @@ function getDuration(event: Event) {
       <AppCard v-for="event in events" :key="event.id" class="event-card">
         <div class="event-content">
           <div class="event-header">
-            <span class="badge">{{ event.level }}</span>
             <span class="price">${{ event.price }} / {{ getDuration(event) }}hr</span>
           </div>
           <h3>{{ event.title }}</h3>
@@ -53,7 +52,7 @@ function getDuration(event: Event) {
             <span>📍 {{ event.location }}</span>
           </div>
           <div class="participants">
-            <span>👥 {{ event.maxParticipants }} 人滿團</span>
+            <span>👥 {{ event.maxAttendees }} 人滿團</span>
           </div>
           <AppButton variant="outline" class="action-btn" @click="goToDetail(event.id)">
             查看詳情

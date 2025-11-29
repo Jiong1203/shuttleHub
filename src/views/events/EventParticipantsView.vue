@@ -13,7 +13,7 @@ const eventId = route.params.id as string
 const event = computed(() => store.getEventById(eventId))
 const registrations = computed(() => store.getRegistrationsByEventId(eventId))
 
-function updateStatus(registrationId: string, status: 'approved' | 'rejected') {
+function updateStatus(registrationId: string, status: 'CONFIRMED' | 'WAITLISTED') {
   store.updateRegistration(registrationId, { status })
 }
 </script>
@@ -34,12 +34,12 @@ function updateStatus(registrationId: string, status: 'approved' | 'rejected') {
       </AppCard>
       <AppCard class="stat-card">
         <div class="stat-value">
-          {{ registrations.reduce((sum, r) => r.status === 'approved' ? sum + r.count : sum, 0) }}
+          {{ registrations.reduce((sum, r) => r.status === 'CONFIRMED' ? sum + r.numberOfPeople : sum, 0) }}
         </div>
         <div class="stat-label">已核准人數</div>
       </AppCard>
       <AppCard class="stat-card">
-        <div class="stat-value">{{ event.maxParticipants }}</div>
+        <div class="stat-value">{{ event.maxAttendees }}</div>
         <div class="stat-label">名額上限</div>
       </AppCard>
     </div>
@@ -51,24 +51,23 @@ function updateStatus(registrationId: string, status: 'approved' | 'rejected') {
 
       <AppCard v-else v-for="reg in registrations" :key="reg.id" class="registration-item">
         <div class="user-info">
-          <div class="avatar-placeholder">{{ reg.name[0] }}</div>
+          <div class="avatar-placeholder">{{ reg.participantName[0] }}</div>
           <div>
             <div class="user-name">
-              {{ reg.name }}
-              <span class="count-badge">x{{ reg.count }}</span>
+              {{ reg.participantName }}
+              <span class="count-badge">x{{ reg.numberOfPeople }}</span>
             </div>
-            <div class="reg-time">{{ new Date(reg.timestamp).toLocaleString() }}</div>
+            <div class="reg-time">{{ new Date(reg.createdAt).toLocaleString() }}</div>
           </div>
         </div>
 
         <div class="status-actions">
-          <span :class="['status-badge', reg.status]">
-            {{ reg.status === 'approved' ? '已核准' : reg.status === 'rejected' ? '已拒絕' : reg.status === 'waitlist' ? '候補中' : '待審核' }}
+          <span :class="['status-badge', reg.status === 'CONFIRMED' ? 'approved' : reg.status === 'WAITLISTED' ? 'waitlist' : 'pending']">
+            {{ reg.status === 'CONFIRMED' ? '已核准' : reg.status === 'WAITLISTED' ? '候補中' : '待審核' }}
           </span>
 
-          <div class="action-buttons" v-if="reg.status === 'pending' || reg.status === 'waitlist'">
-            <AppButton size="sm" variant="primary" @click="updateStatus(reg.id, 'approved')">核准</AppButton>
-            <AppButton size="sm" variant="danger" @click="updateStatus(reg.id, 'rejected')">拒絕</AppButton>
+          <div class="action-buttons" v-if="reg.status === 'WAITLISTED'">
+            <AppButton size="sm" variant="primary" @click="updateStatus(reg.id, 'CONFIRMED')">核准</AppButton>
           </div>
         </div>
       </AppCard>

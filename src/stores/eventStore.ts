@@ -148,7 +148,7 @@ export const useEventStore = defineStore('events', () => {
     } catch (err: any) {
       error.value = err.response?.data?.message || '建立活動失敗'
       console.error('建立活動錯誤:', err)
-      throw new Error(error.value)
+      throw new Error(error.value || '建立活動失敗')
     } finally {
       loading.value = false
     }
@@ -175,7 +175,7 @@ export const useEventStore = defineStore('events', () => {
     } catch (err: any) {
       error.value = err.response?.data?.message || '更新活動失敗'
       console.error('更新活動錯誤:', err)
-      throw new Error(error.value)
+      throw new Error(error.value || '更新活動失敗')
     } finally {
       loading.value = false
     }
@@ -195,7 +195,7 @@ export const useEventStore = defineStore('events', () => {
     } catch (err: any) {
       error.value = err.response?.data?.message || '刪除活動失敗'
       console.error('刪除活動錯誤:', err)
-      throw new Error(error.value)
+      throw new Error(error.value || '刪除活動失敗')
     } finally {
       loading.value = false
     }
@@ -235,7 +235,47 @@ export const useEventStore = defineStore('events', () => {
     } catch (err: any) {
       error.value = err.response?.data?.message || '報名失敗'
       console.error('報名錯誤:', err)
-      throw new Error(error.value)
+      throw new Error(error.value || '報名失敗')
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function updateRegistration(
+    id: string,
+    updates: {
+      participantName?: string
+      numberOfPeople?: number
+      status?: 'CONFIRMED' | 'WAITLISTED'
+    },
+  ) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await api.put(`/registrations/${id}`, updates)
+      if (response.data.success) {
+        const updatedRegistration = response.data.data
+        const index = registrations.value.findIndex((r) => r.id === id)
+        if (index !== -1) {
+          registrations.value[index] = {
+            ...registrations.value[index],
+            ...updatedRegistration,
+            id: updatedRegistration.id.toString(),
+            eventId: updatedRegistration.eventId.toString(),
+            userId: updatedRegistration.userId.toString(),
+            participantName: updatedRegistration.participantName,
+            numberOfPeople: updatedRegistration.numberOfPeople,
+            status: updatedRegistration.status,
+            createdAt: updatedRegistration.createdAt,
+            updatedAt: updatedRegistration.updatedAt,
+          }
+        }
+        return registrations.value[index]
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.message || '更新報名失敗'
+      console.error('更新報名錯誤:', err)
+      throw new Error(error.value || '更新報名失敗')
     } finally {
       loading.value = false
     }
@@ -255,7 +295,7 @@ export const useEventStore = defineStore('events', () => {
     } catch (err: any) {
       error.value = err.response?.data?.message || '取消報名失敗'
       console.error('取消報名錯誤:', err)
-      throw new Error(error.value)
+      throw new Error(error.value || '取消報名失敗')
     } finally {
       loading.value = false
     }
@@ -303,6 +343,7 @@ export const useEventStore = defineStore('events', () => {
     updateEvent,
     deleteEvent,
     registerForEvent,
+    updateRegistration,
     cancelRegistration,
     fetchMyRegistrations,
   }

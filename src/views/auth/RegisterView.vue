@@ -52,15 +52,18 @@ function handleSubmit() {
     return
   }
 
-  const result = authStore.register(form.value.email, form.value.password, form.value.name)
+  authStore.register(form.value.email, form.value.password, form.value.name).then((result) => {
+    loading.value = false
 
-  loading.value = false
-
-  if (result.success) {
-    router.push('/')
-  } else {
-    error.value = result.error || '註冊失敗'
-  }
+    if (result.success) {
+      router.push('/')
+    } else {
+      error.value = result.error || '註冊失敗'
+    }
+  }).catch(() => {
+    loading.value = false
+    error.value = '註冊失敗'
+  })
 }
 </script>
 

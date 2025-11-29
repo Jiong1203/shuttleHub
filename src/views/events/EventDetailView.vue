@@ -20,8 +20,8 @@ const isRegistered = computed(() => !!myRegistration.value)
 
 const approvedRegistrations = computed(() => {
   return registrations.value
-    .filter(r => r.status === 'approved' || r.status === 'pending')
-    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+    .filter(r => r.status === 'CONFIRMED' || r.status === 'WAITLISTED')
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
 })
 
 // Form state
@@ -34,8 +34,8 @@ const form = ref({
 // Watch for registration changes to update form defaults if editing
 watch(myRegistration, (newReg) => {
   if (newReg) {
-    form.value.name = newReg.name
-    form.value.count = newReg.count
+    form.value.name = newReg.participantName
+    form.value.count = newReg.numberOfPeople
   }
 }, { immediate: true })
 
@@ -64,13 +64,13 @@ const duration = computed(() => {
 
 const currentParticipants = computed(() => {
   return registrations.value
-    .filter(r => r.status === 'approved' || r.status === 'pending')
-    .reduce((sum, r) => sum + Number(r.count), 0)
+    .filter(r => r.status === 'CONFIRMED' || r.status === 'WAITLISTED')
+    .reduce((sum, r) => sum + Number(r.numberOfPeople), 0)
 })
 
 const isFull = computed(() => {
   if (!event.value) return false
-  return currentParticipants.value >= event.value.maxParticipants
+  return currentParticipants.value >= event.value.maxAttendees
 })
 
 function handleRegister() {
@@ -82,8 +82,8 @@ function handleRegister() {
 function handleUpdate() {
   if (!myRegistration.value) return
   store.updateRegistration(myRegistration.value.id, {
-    name: form.value.name,
-    count: Number(form.value.count)
+    participantName: form.value.name,
+    numberOfPeople: Number(form.value.count)
   })
   showForm.value = false
 }
@@ -103,7 +103,6 @@ function handleCancel() {
       <div class="main-info">
         <AppCard>
           <div class="header">
-            <span class="badge">{{ event.level }}</span>
             <h1>{{ event.title }}</h1>
           </div>
 
@@ -136,8 +135,8 @@ function handleCancel() {
             <div class="participant-list">
               <div v-for="(reg, index) in approvedRegistrations" :key="reg.id" class="participant-item">
                 <span class="participant-number">{{ index + 1 }}.</span>
-                <span class="participant-name">{{ reg.name }}</span>
-                <span class="participant-count">({{ reg.count }}人)</span>
+                <span class="participant-name">{{ reg.participantName }}</span>
+                <span class="participant-count">({{ reg.numberOfPeople }}人)</span>
               </div>
             </div>
           </div>
@@ -150,7 +149,7 @@ function handleCancel() {
           <div class="status-info">
             <div class="progress">
               <span class="count">{{ currentParticipants }}</span>
-              <span class="total">/ {{ event.maxParticipants }}</span>
+              <span class="total">/ {{ event.maxAttendees }}</span>
             </div>
             <p class="status-text">目前人數</p>
           </div>
@@ -193,12 +192,12 @@ function handleCancel() {
 
           <!-- Registered -->
           <div v-else class="registered-info">
-            <div class="status-badge" :class="myRegistration?.status">
-              {{ myRegistration?.status === 'waitlist' ? '候補中' : '已報名' }}
+            <div class="status-badge" :class="myRegistration?.status === 'WAITLISTED' ? 'waitlist' : 'approved'">
+              {{ myRegistration?.status === 'WAITLISTED' ? '候補中' : '已報名' }}
             </div>
             <div class="reg-details">
-              <p><strong>名稱：</strong>{{ myRegistration?.name }}</p>
-              <p><strong>人數：</strong>{{ myRegistration?.count }} 位</p>
+              <p><strong>名稱：</strong>{{ myRegistration?.participantName }}</p>
+              <p><strong>人數：</strong>{{ myRegistration?.numberOfPeople }} 位</p>
             </div>
 
             <div v-if="!showForm" class="reg-actions">

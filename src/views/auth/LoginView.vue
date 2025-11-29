@@ -36,15 +36,18 @@ function handleSubmit() {
     return
   }
 
-  const result = authStore.login(form.value.email, form.value.password)
+  authStore.login(form.value.email, form.value.password).then((result) => {
+    loading.value = false
 
-  loading.value = false
-
-  if (result.success) {
-    router.push('/')
-  } else {
-    error.value = result.error || '登入失敗'
-  }
+    if (result.success) {
+      router.push('/')
+    } else {
+      error.value = result.error || '登入失敗'
+    }
+  }).catch(() => {
+    loading.value = false
+    error.value = '登入失敗'
+  })
 }
 </script>
 
