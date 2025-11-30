@@ -30,6 +30,20 @@ app.use('/api/auth', authRoutes)
 app.use('/api/events', eventRoutes)
 app.use('/api', registrationRoutes) // 報名路由通常掛在 /api 下，例如 /api/events/:id/register
 
+// 根路徑 - API 資訊
+app.get('/', (req, res) => {
+  res.json({
+    message: 'ShuttleHub API Server',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      auth: '/api/auth',
+      events: '/api/events',
+      registrations: '/api/registrations',
+    },
+  })
+})
+
 // 健康檢查端點
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
