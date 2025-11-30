@@ -79,19 +79,34 @@ VITE_API_URL=http://localhost:3001/api
 
 #### 生產環境（Vercel 部署）
 
-在 Vercel 專案設置中添加環境變數：
+##### 前端環境變數
 
-1. 進入 Vercel 專案 Dashboard
+在**前端 Vercel 專案**設置中添加環境變數：
+
+1. 進入 Vercel 專案 Dashboard（前端專案）
 2. 點擊 **Settings** → **Environment Variables**
 3. 添加以下環境變數：
    - **Name**: `VITE_API_URL`
-   - **Value**: 您的後端 API URL（例如：`https://your-backend-api.vercel.app/api` 或 `https://api.yourdomain.com/api`）
+   - **Value**: 您的後端 API URL（例如：`https://your-backend-api.vercel.app/api`）
    - **Environment**: 選擇 `Production`、`Preview` 和 `Development`（根據需要）
+
+##### 後端環境變數
+
+在**後端 Vercel 專案**設置中添加環境變數（詳細說明請參考 `backend/ENV_SETUP.md`）：
+
+**必需環境變數：**
+- `DATABASE_URL` - Supabase PostgreSQL 連接字串
+- `DIRECT_URL` - Supabase 直接連接字串（通常與 DATABASE_URL 相同）
+- `JWT_SECRET` - JWT 簽署密鑰（請使用強密鑰）
+- `FRONTEND_URL` - 前端 URL（例如：`https://shuttle-hub.vercel.app`）
+
+**可選環境變數：**
+- `JWT_EXPIRES_IN` - Token 過期時間（預設：`7d`）
 
 > **注意**: 
 > - 前端環境變數必須以 `VITE_` 開頭才能在 Vite 中使用
-> - 後端已配置 Supabase 雲端資料庫，`.env` 檔案已包含連線資訊
-> - 後端的 `.env` 檔案已被 `.gitignore` 忽略，如需查看配置請參考 `backend/.env.example`
+> - 後端部署說明請參考 `backend/VERCEL_DEPLOYMENT.md`
+> - 環境變數設定指南請參考 `backend/ENV_SETUP.md`
 
 ### 步驟三：啟動專案
 
