@@ -36,18 +36,21 @@ function handleSubmit() {
     return
   }
 
-  authStore.login(form.value.email, form.value.password).then((result) => {
-    loading.value = false
+  authStore
+    .login(form.value.email, form.value.password)
+    .then((result) => {
+      loading.value = false
 
-    if (result.success) {
-      router.push('/')
-    } else {
-      error.value = result.error || '登入失敗'
-    }
-  }).catch(() => {
-    loading.value = false
-    error.value = '登入失敗'
-  })
+      if (result.success) {
+        router.push('/')
+      } else {
+        error.value = result.error || '登入失敗'
+      }
+    })
+    .catch(() => {
+      loading.value = false
+      error.value = '登入失敗'
+    })
 }
 </script>
 
@@ -102,11 +105,9 @@ function handleSubmit() {
               <strong>管理員：</strong> admin@shuttlehub.com / admin123
             </div>
             <div class="test-account">
-              <strong>團長：</strong> organizer@test.com / password123
+              <strong>團長：</strong> organizer@test.com / organizer123
             </div>
-            <div class="test-account">
-              <strong>會員：</strong> member@test.com / password123
-            </div>
+            <div class="test-account"><strong>會員：</strong> member@test.com / member123</div>
           </div>
         </div>
       </AppCard>
