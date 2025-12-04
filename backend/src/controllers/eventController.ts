@@ -16,7 +16,7 @@ export const getEvents = async (req: Request, res: Response) => {
 
 export const getEvent = async (req: Request, res: Response) => {
   try {
-    const id = parseInt(req.params.id)
+    const id = req.params.id
     const event = await eventService.getEventById(id)
     res.json({ success: true, data: event })
   } catch (error: unknown) {
@@ -46,7 +46,7 @@ export const updateEvent = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: '未經授權' })
     }
 
-    const id = parseInt(req.params.id)
+    const id = req.params.id
     const event = await eventService.updateEvent(id, req.body, req.user.userId, req.user.role)
     res.json({ success: true, data: event })
   } catch (error: unknown) {
@@ -61,7 +61,7 @@ export const deleteEvent = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: '未經授權' })
     }
 
-    const id = parseInt(req.params.id)
+    const id = req.params.id
     await eventService.deleteEvent(id, req.user.userId, req.user.role)
     res.json({ success: true, message: '活動已刪除' })
   } catch (error: unknown) {

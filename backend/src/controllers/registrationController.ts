@@ -7,7 +7,7 @@ export const register = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: '未經授權' })
     }
 
-    const eventId = parseInt(req.params.eventId)
+    const eventId = req.params.eventId
     const { participantName, numberOfPeople } = req.body
 
     const registration = await registrationService.registerForEvent(
@@ -30,7 +30,7 @@ export const cancel = async (req: Request, res: Response) => {
       return res.status(401).json({ success: false, message: '未經授權' })
     }
 
-    const id = parseInt(req.params.id)
+    const id = req.params.id
     await registrationService.cancelRegistration(id, req.user.userId, req.user.role)
 
     res.json({ success: true, message: '報名已取消' })

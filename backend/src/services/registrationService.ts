@@ -4,7 +4,7 @@ import { PrismaClient, RegistrationStatus, Role } from '@prisma/client'
 const prisma = new PrismaClient()
 
 export const registerForEvent = async (
-  eventId: number,
+  eventId: string,
   userId: string,
   participantName: string,
   numberOfPeople: number,
@@ -59,7 +59,7 @@ export const registerForEvent = async (
 }
 
 export const cancelRegistration = async (
-  registrationId: number,
+  registrationId: string,
   userId: string,
   userRole: Role,
 ) => {

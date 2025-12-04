@@ -38,7 +38,7 @@ export const getAllEvents = async (page: number = 1, limit: number = 10) => {
   }
 }
 
-export const getEventById = async (id: number) => {
+export const getEventById = async (id: string) => {
   const event = await prisma.event.findUnique({
     where: { id },
     include: {
@@ -113,7 +113,7 @@ interface UpdateEventData {
 }
 
 export const updateEvent = async (
-  id: number,
+  id: string,
   eventData: UpdateEventData,
   userId: string,
   userRole: Role,
@@ -140,7 +140,7 @@ export const updateEvent = async (
   return updatedEvent
 }
 
-export const deleteEvent = async (id: number, userId: string, userRole: Role) => {
+export const deleteEvent = async (id: string, userId: string, userRole: Role) => {
   const event = await prisma.event.findUnique({ where: { id } })
 
   if (!event) {

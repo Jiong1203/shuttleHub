@@ -13,7 +13,7 @@ generator client {
 
 // 使用者模型
 model User {
-  id            String         @id @default(uuid())
+  id            String         @id @default(uuid()) @db.Uuid
   email         String         @unique
   password      String         // bcrypt 加密
   name          String
@@ -28,7 +28,7 @@ model User {
 
 // 活動模型
 model Event {
-  id            Int            @id @default(autoincrement())
+  id            String         @id @default(uuid()) @db.Uuid
   title         String
   description   String
   date          DateTime
@@ -42,13 +42,13 @@ model Event {
 
   // 關聯
   organizer     User           @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
-  organizerId   String
+  organizerId   String         @db.Uuid
   registrations Registration[]
 }
 
 // 報名模型
 model Registration {
-  id              Int                @id @default(autoincrement())
+  id              String             @id @default(uuid()) @db.Uuid
   participantName String             // 報名者姓名
   numberOfPeople  Int                @default(1) // 報名人數
   status          RegistrationStatus @default(CONFIRMED)
@@ -57,9 +57,9 @@ model Registration {
 
   // 關聯
   user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId        String
+  userId        String             @db.Uuid
   event         Event              @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  eventId       Int
+  eventId       String             @db.Uuid
 
   // 同一使用者對同一活動只能報名一次
   @@unique([userId, eventId])
