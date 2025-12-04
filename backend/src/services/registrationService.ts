@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 
 export const registerForEvent = async (
   eventId: number,
-  userId: number,
+  userId: string,
   participantName: string,
   numberOfPeople: number,
 ) => {
@@ -60,7 +60,7 @@ export const registerForEvent = async (
 
 export const cancelRegistration = async (
   registrationId: number,
-  userId: number,
+  userId: string,
   userRole: Role,
 ) => {
   const registration = await prisma.registration.findUnique({
@@ -88,7 +88,7 @@ export const cancelRegistration = async (
   // TODO: 這裡可以加入自動遞補邏輯 (Optional)
 }
 
-export const getUserRegistrations = async (userId: number) => {
+export const getUserRegistrations = async (userId: string) => {
   const registrations = await prisma.registration.findMany({
     where: { userId },
     include: {

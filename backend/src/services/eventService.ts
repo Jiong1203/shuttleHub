@@ -81,7 +81,7 @@ interface CreateEventData {
   maxAttendees: number
 }
 
-export const createEvent = async (eventData: CreateEventData, organizerId: number) => {
+export const createEvent = async (eventData: CreateEventData, organizerId: string) => {
   const { title, description, date, startTime, endTime, location, price, maxAttendees } = eventData
 
   const event = await prisma.event.create({
@@ -115,7 +115,7 @@ interface UpdateEventData {
 export const updateEvent = async (
   id: number,
   eventData: UpdateEventData,
-  userId: number,
+  userId: string,
   userRole: Role,
 ) => {
   const event = await prisma.event.findUnique({ where: { id } })
@@ -140,7 +140,7 @@ export const updateEvent = async (
   return updatedEvent
 }
 
-export const deleteEvent = async (id: number, userId: number, userRole: Role) => {
+export const deleteEvent = async (id: number, userId: string, userRole: Role) => {
   const event = await prisma.event.findUnique({ where: { id } })
 
   if (!event) {
