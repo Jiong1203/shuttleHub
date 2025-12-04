@@ -169,6 +169,52 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('shuttlehub_current_user_id')
   }
 
+  // Forgot Password
+  async function forgotPassword(
+    email: string,
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await api.post('/auth/forgot-password', { email })
+
+      if (response.data.success) {
+        return { success: true }
+      }
+
+      return { success: false, error: response.data.message || '請求失敗' }
+    } catch (error: any) {
+      console.error('忘記密碼錯誤:', error)
+      return {
+        success: false,
+        error: error.response?.data?.message || '網路錯誤，請稍後再試',
+      }
+    }
+  }
+
+  // Reset Password
+  async function resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await api.post('/auth/reset-password', {
+        token,
+        newPassword,
+      })
+
+      if (response.data.success) {
+        return { success: true }
+      }
+
+      return { success: false, error: response.data.message || '重設密碼失敗' }
+    } catch (error: any) {
+      console.error('重設密碼錯誤:', error)
+      return {
+        success: false,
+        error: error.response?.data?.message || '網路錯誤，請稍後再試',
+      }
+    }
+  }
+
   // Apply to become organizer
   function applyForOrganizer(reason: string): { success: boolean; error?: string } {
     if (!currentUser.value) {
@@ -275,6 +321,8 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     login,
     logout,
+    forgotPassword,
+    resetPassword,
     applyForOrganizer,
     approveOrganizerApplication,
     rejectOrganizerApplication,

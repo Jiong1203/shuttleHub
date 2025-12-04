@@ -11,19 +11,20 @@ const authStore = useAuthStore()
 
 const form = ref({
   email: '',
-  password: '',
 })
 
 const error = ref('')
+const success = ref(false)
 const loading = ref(false)
 
 function handleSubmit() {
   error.value = ''
+  success.value = false
   loading.value = true
 
   // Basic validation
-  if (!form.value.email || !form.value.password) {
-    error.value = '請填寫所有欄位'
+  if (!form.value.email) {
+    error.value = '請輸入 Email'
     loading.value = false
     return
   }
@@ -37,33 +38,33 @@ function handleSubmit() {
   }
 
   authStore
-    .login(form.value.email, form.value.password)
+    .forgotPassword(form.value.email)
     .then((result) => {
       loading.value = false
 
       if (result.success) {
-        router.push('/')
+        success.value = true
       } else {
-        error.value = result.error || '登入失敗'
+        error.value = result.error || '請求失敗'
       }
     })
     .catch(() => {
       loading.value = false
-      error.value = '登入失敗'
+      error.value = '請求失敗，請稍後再試'
     })
 }
 </script>
 
 <template>
   <div class="container">
-    <div class="login-container">
-      <AppCard class="login-card">
-        <div class="login-header">
-          <h1>登入 ShuttleHub</h1>
-          <p>歡迎回來！請登入您的帳號</p>
+    <div class="forgot-password-container">
+      <AppCard class="forgot-password-card">
+        <div class="forgot-password-header">
+          <h1>忘記密碼</h1>
+          <p>請輸入您的 Email，我們將發送重設密碼連結給您</p>
         </div>
 
-        <form @submit.prevent="handleSubmit" class="login-form">
+        <form v-if="!success" @submit.prevent="handleSubmit" class="forgot-password-form">
           <AppInput
             v-model="form.email"
             type="email"
@@ -72,48 +73,36 @@ function handleSubmit() {
             required
           />
 
-          <div class="password-input-wrapper">
-            <AppInput
-              v-model="form.password"
-              type="password"
-              label="密碼"
-              placeholder="請輸入密碼"
-              required
-            />
-            <router-link to="/forgot-password" class="forgot-password-link">
-              忘記密碼？
-            </router-link>
-          </div>
-
           <div v-if="error" class="error-message">
             {{ error }}
           </div>
 
           <AppButton type="submit" variant="primary" class="submit-btn" :disabled="loading">
-            {{ loading ? '登入中...' : '登入' }}
+            {{ loading ? '發送中...' : '發送重設連結' }}
           </AppButton>
 
           <div class="divider">
             <span>或</span>
           </div>
 
-          <p class="register-link">
-            還沒有帳號？
-            <router-link to="/register" class="link">立即註冊</router-link>
+          <p class="login-link">
+            記起密碼了？
+            <router-link to="/login" class="link">返回登入</router-link>
           </p>
         </form>
 
-        <div class="test-accounts">
-          <p class="test-title">測試帳號：</p>
-          <div class="test-account-list">
-            <div class="test-account">
-              <strong>管理員：</strong> admin@shuttlehub.com / admin123
-            </div>
-            <div class="test-account">
-              <strong>團長：</strong> organizer@test.com / organizer123
-            </div>
-            <div class="test-account"><strong>會員：</strong> member@test.com / member123</div>
-          </div>
+        <div v-else class="success-message">
+          <div class="success-icon">✓</div>
+          <h2>郵件已發送</h2>
+          <p>
+            我們已將重設密碼連結發送至 <strong>{{ form.email }}</strong>
+          </p>
+          <p class="hint">
+            請檢查您的收件匣（包括垃圾郵件資料夾）。重設連結將在 1 小時後過期。
+          </p>
+          <AppButton variant="primary" class="submit-btn" @click="router.push('/login')">
+            返回登入
+          </AppButton>
         </div>
       </AppCard>
     </div>
@@ -121,22 +110,22 @@ function handleSubmit() {
 </template>
 
 <style scoped>
-.login-container {
+.forgot-password-container {
   max-width: 480px;
   margin: 3rem auto;
   padding: 0 var(--spacing-md);
 }
 
-.login-card {
+.forgot-password-card {
   padding: var(--spacing-2xl);
 }
 
-.login-header {
+.forgot-password-header {
   text-align: center;
   margin-bottom: var(--spacing-xl);
 }
 
-.login-header h1 {
+.forgot-password-header h1 {
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: var(--spacing-sm);
@@ -146,33 +135,14 @@ function handleSubmit() {
   background-clip: text;
 }
 
-.login-header p {
+.forgot-password-header p {
   color: var(--color-text-muted);
 }
 
-.login-form {
+.forgot-password-form {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
-}
-
-.password-input-wrapper {
-  position: relative;
-}
-
-.forgot-password-link {
-  position: absolute;
-  right: 0;
-  top: 0;
-  font-size: 0.875rem;
-  color: var(--color-primary);
-  text-decoration: none;
-  font-weight: 500;
-  transition: color var(--transition-fast);
-}
-
-.forgot-password-link:hover {
-  color: var(--color-primary-hover);
 }
 
 .error-message {
@@ -182,6 +152,49 @@ function handleSubmit() {
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
   font-size: 0.875rem;
+}
+
+.success-message {
+  text-align: center;
+  padding: var(--spacing-lg) 0;
+}
+
+.success-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto var(--spacing-md);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: white;
+  font-weight: bold;
+}
+
+.success-message h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text-main);
+}
+
+.success-message p {
+  color: var(--color-text-muted);
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.6;
+}
+
+.success-message p strong {
+  color: var(--color-text-main);
+}
+
+.success-message .hint {
+  font-size: 0.875rem;
+  margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-xl);
+  color: var(--color-text-muted);
 }
 
 .submit-btn {
@@ -213,7 +226,7 @@ function handleSubmit() {
   font-size: 0.875rem;
 }
 
-.register-link {
+.login-link {
   text-align: center;
   color: var(--color-text-muted);
   font-size: 0.875rem;
@@ -228,36 +241,5 @@ function handleSubmit() {
 .link:hover {
   color: var(--color-primary-hover);
 }
-
-.test-accounts {
-  margin-top: var(--spacing-xl);
-  padding-top: var(--spacing-lg);
-  border-top: 1px solid var(--color-border);
-}
-
-.test-title {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
-  margin-bottom: var(--spacing-sm);
-}
-
-.test-account-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.test-account {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
-  font-family: 'Courier New', monospace;
-  background-color: var(--color-bg-body);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--radius-sm);
-}
-
-.test-account strong {
-  color: var(--color-text-main);
-}
 </style>
+
